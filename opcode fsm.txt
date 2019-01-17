@@ -1,0 +1,101 @@
+----------------------------------------------------------------------------------
+-- Company:
+-- Engineer:
+--
+-- Create Date: 28.11.2018 15:47:32
+-- Design Name:
+-- Module Name: OPCODE_SEL - Behavioral
+-- Project Name:
+-- Target Devices:
+-- Tool Versions:
+-- Description:
+--
+-- Dependencies:
+--
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+--
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+
+entity OPCODE_SEL is
+	Port( 	Button_INCR : in STD_LOGIC;
+					Button_DECR : in STD_LOGIC;
+					RESET : in STD_LOGIC;
+					CLK_IN : in STD_LOGIC;
+
+					OPCODE : out STD_LOGIC_VECTOR(3 downto 0) := (others => '0')
+			);
+end OPCODE_SEL;
+
+architecture Behavioral of OPCODE_SEL is
+
+	type FSM_STATES is (Idle, Incr, Decr, Hold, Refresh);
+	signal State, nextstate : FSM_STATES;
+	signal Temp_Opcode : std_logic_vector(3 downto 0) := (others => '1');
+
+begin
+
+	FSM_REG : process(CLK_IN, Reset)
+
+	begin
+			if RESET = '1' then
+			 state <= Idle;
+
+			elsif rising_edge(CLK_IN) then
+				state <= nextstate;
+			end if;
+	end process FSM_REG;
+
+
+
+	COMB_LOGIC : process(State, Button_INCR, Button_DECR)
+	begin
+		nextstate <= state;
+
+		case state is
+			when Idle =>
+				if Button_INCR = '1' then
+					nextstate <= Incr;
+				elsif Button_DECR = '1' then
+					nextstate <= Decr;
+				else
+					nextstate <= Idle;
+				end if;
+
+			when Incr =>
+				Temp_Opcode <= Temp_Opcode + 1;
+				nextstate <= Hold;
+
+			when Decr =>
+				Temp_Opcode <= Temp_Opcode - 1;
+				nextstate <= Hold;
+
+			when Hold =>
+				if Button_INCR = '0' then
+					nextstate <= Refresh;
+				elsif Button_DECR = '0' then
+					nextstate <= Refresh;
+				else
+					nextstate <= Hold;
+				end if;
+
+			when Refresh =>
+				opcode <= Temp_Opcode;
+				nextstate <= Idle;
+
+			when others =>
+				nextstate <= Idle;
+
+		end case;
+	end process COMB_LOGIC;
+
+
+end Behavioral;
